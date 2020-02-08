@@ -1,0 +1,20 @@
+package com.gent00.datapoint.filter.model;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class IOStatFilterStreamerTest {
+
+    @Test
+    void parseHeaderToColumns() {
+        String header1 = "avg-cpu:  %user   %nice %system %iowait  %steal   %idle";
+        String header2 = "Device:         rrqm/s   wrqm/s     r/s     w/s    rkB/s    wkB/s avgrq-sz avgqu-sz   await r_await w_await  svctm  %util";
+        Assertions.assertArrayEquals(new String[]{"avg-cpu", "%user", "%nice", "%system", "%iowait", "%steal", "%idle"}, IOStatFilterStreamer.parseHeaderToColumns(header1));
+        Assertions.assertArrayEquals(new String[]{"Device","rrqm/s","wrqm/s","r/s","w/s","rkB/s","wkB/s","avgrq-sz","avgqu-sz","await","r_await","w_await","svctm","%util"},
+                IOStatFilterStreamer.parseHeaderToColumns(header2));
+
+
+    }
+}
