@@ -1,3 +1,11 @@
+/*
+ *  Copyright (C) Avinash Ramana - All Rights Reserved
+ *  * Unauthorized copying of this file, via any medium is strictly prohibited
+ *  * Proprietary and confidential
+ *  * Written by Avinash Ramana <bitorius@gent00.com>, 2020
+ *
+ */
+
 import com.gent00.datapoint.filter.model.IOStatFilter;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Assertions;
