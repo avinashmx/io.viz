@@ -10,6 +10,7 @@ package com.gent00.datapoint.filter.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class DataTable {
 
@@ -35,12 +36,24 @@ public class DataTable {
         columns.stream().sequential().forEach(header::add);
     }
 
-    public void addRow(List<String> values) {
+    public void addRow(String[] rowValues) {
         if (this.values == null) {
             this.values = new ArrayList<>(5);
         }
-        this.values.add(values.toArray(new String[values.size()]));
+        this.values.add(rowValues);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DataTable dataTable = (DataTable) o;
+        return Objects.equals(getHeader(), dataTable.getHeader()) &&
+                Objects.equals(getValues(), dataTable.getValues());
+    }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(getHeader(), getValues());
+    }
 }

@@ -15,9 +15,7 @@ import org.apache.commons.logging.LogFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -56,10 +54,16 @@ public class IOStatFilterStreamer {
         String line = "";
 
         /*This is our stateful dataframe*/
-        List<String> _currentColumns = new ArrayList<>(10);
-        List<String> _currentRows = new ArrayList<>(10);
+        Stack<DataFrame> dataFrameStack = new Stack<>();
+        DataFrame df = new DataFrame();
+        dataFrameStack.push(df);
+        String DATA_FRAME_ANCHOR = null;
 
+        DataTable dt = null;
+
+        int lineNumber = 0;
         while ((line = reader.readLine()) != null) {
+            lineNumber++;
             //Discard empties
             if (line.isEmpty()) {
                 continue;
@@ -67,36 +71,72 @@ public class IOStatFilterStreamer {
             if (log.isTraceEnabled()) {
                 log.trace(line);
             }
-            boolean isHeader = (p.matcher(line)).find();
+            boolean isHeader = ((p.matcher(line)).find()) || line.startsWith("Device");
+            if (isHeader && log.isDebugEnabled()) {
+                log.debug("Header identified -> " + line);
+            }
+
             if (isHeader) {
-                //It's a header
-                String[] headerColumns = parseStringToColumns(line);
 
-
-                /*But is it a new dataframe? Compare encountered header with previous header. If they're the same, we're starting to repeat*/
+                //Cleanup existing DataTable since it's a new header
                 {
-                    String incomingHeader = Arrays.stream(headerColumns).sequential().collect(Collectors.joining());
-                    String previousHeaderStart = _currentColumns.stream().sequential().limit(headerColumns.length).sequential().collect(Collectors.joining()); //Only compare up to the beginning. Remember, it's a stream, so we don't know what's coming.
+                    df.addDataTable(dt);
+                    dt = new DataTable();
 
-                    if (incomingHeader.equals(previousHeaderStart)) { //We found a new data frame!
-                        DataTable dt = new DataTable();
-                        dt.addColumns(_currentColumns);
-                        dt.addRow(_currentRows);
-                        dataTableListener.receiveDataTable(dt);
+                    //Write new header
+                    String[] headerColumns = parseStringToColumns(line);
+                    dt.addColumns(Arrays.asList(headerColumns));
+                }
 
-                        log.debug("A new data frame is starting");
-                        _currentRows.clear();
-                        _currentColumns.clear();
+                //Is it a new frame also?
+                if (dataFrameStack.size() > 0 && DATA_FRAME_ANCHOR == null) { //We need to find an "anchor" to signal that we're recurring. After we set it, do not scan again!
+                    DataFrame previousDF = dataFrameStack.peek();
+                    Iterator<DataTable> iterator = previousDF.iterateDataTables();
+                    while (iterator.hasNext()) {
+                        List<String> previousHeaderColumns = iterator.next().getHeader();//Is this header recurring?
+                        if (previousHeaderColumns == null) continue;
+                        String previousHeaderString = previousHeaderColumns.stream().collect(Collectors.joining());
+                        String currentHeaderString = dt.getHeader().stream().collect(Collectors.joining());
+                        if (currentHeaderString.equals(previousHeaderString)) {
+                            DATA_FRAME_ANCHOR = currentHeaderString; //Save the "anchor" so this is easier next time.
+                            log.debug("Header Recurrence Detected  @ L:" + lineNumber + " \t->\t " + (previousHeaderColumns.stream().collect(Collectors.joining(","))));
+                            df = new DataFrame(); //We don't push this back to the stack, because this the first frame was pre-added.
+                            break;
+                        }
+                    }
+                } else if (DATA_FRAME_ANCHOR != null) {
+                    String currentHeaderString = dt.getHeader().stream().collect(Collectors.joining());
+                    if (currentHeaderString.equals(DATA_FRAME_ANCHOR)) {
+                        log.debug("Header Anchored at " + lineNumber);
+                        dataFrameStack.push(df); //Push finished frame and create a new one.
+                        df = new DataFrame();
                     }
                 }
 
-                Arrays.stream((headerColumns)).sequential().forEach(_currentColumns::add);
+
+
             } else {
-                if (_currentColumns.size() > 0) {//Do we have values?
-                    Arrays.stream((parseStringToColumns(line))).sequential().forEach(_currentRows::add);
+                String rowValues[] = parseStringToColumns(line);
+                if (dt == null) {
+                    dt = new DataTable();
                 }
+                dt.addRow(rowValues);
             }
+
+
         }
+        //Last sample checks
+        if (!df.getDataTables().contains(dt)) {
+            df.addDataTable(dt);
+            dt = null; //Prevent re-use
+        }
+
+        if (!dataFrameStack.contains(df)) {
+            dataFrameStack.push(df);
+            df = null;//Prevent re-use
+        }
+        System.out.println("Hello");
+
     }
 
 
