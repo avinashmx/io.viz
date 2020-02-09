@@ -6,14 +6,12 @@
  *
  */
 
-import com.gent00.datapoint.filter.model.IOStatFilter;
+import com.gent00.datapoint.deprecated.IOStatFilter;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 public class RunMyTest {
 
