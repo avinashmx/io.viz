@@ -23,17 +23,17 @@ public class IOStatFilterStreamer {
 
     private static Pattern p = Pattern.compile("^[A-Za-z0-9-_]+:");
     private Log log = LogFactory.getLog(IOStatFilterStreamer.class);
-    private DataTableListener dataTableListener = null;
+    private DataFrameStackListener dataFrameStackListener;
 
-    public IOStatFilterStreamer(DataTableListener dataTableListener) {
-        this.dataTableListener = dataTableListener;
+    public IOStatFilterStreamer(DataFrameStackListener dataFrameStackListener) {
+        this.dataFrameStackListener = dataFrameStackListener;
     }
 
     public static void main(String[] args) throws IOException {
-        IOStatFilterStreamer streamer = new IOStatFilterStreamer(new ExcelCSVListener());
-
+        IOStatFilterStreamer ioStatFilterStreamer = new IOStatFilterStreamer(new ExcelCSVListener());
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
-        streamer.process(bufferedReader);
+        ioStatFilterStreamer.process(bufferedReader);
+        ioStatFilterStreamer.dataFrameStackListener = new ExcelCSVListener();
     }
 
     /**
@@ -54,10 +54,14 @@ public class IOStatFilterStreamer {
         String line = "";
 
         /*This is our stateful dataframe*/
-        Stack<DataFrame> dataFrameStack = new Stack<>();
+        DataFrameStack dataFrameStack = new DataFrameStack();
+        dataFrameStack.addListener(dataFrameStackListener);
+
+
+
         DataFrame df = new DataFrame();
-        dataFrameStack.push(df);
-        String DATA_FRAME_ANCHOR = null;
+        dataFrameStack.push(df); //Preallocated one frame
+        String DATA_FRAME_ANCHOR = null; //Used to anchor data frame
 
         DataTable dt = null;
 
@@ -101,6 +105,7 @@ public class IOStatFilterStreamer {
                             DATA_FRAME_ANCHOR = currentHeaderString; //Save the "anchor" so this is easier next time.
                             log.debug("Header Recurrence Detected  @ L:" + lineNumber + " \t->\t " + (previousHeaderColumns.stream().collect(Collectors.joining(","))));
                             df = new DataFrame(); //We don't push this back to the stack, because this the first frame was pre-added.
+                            dataFrameStack.push(dataFrameStack.pop()); //Activate the notification again
                             break;
                         }
                     }
@@ -122,8 +127,6 @@ public class IOStatFilterStreamer {
                 }
                 dt.addRow(rowValues);
             }
-
-
         }
         //Last sample checks
         if (!df.getDataTables().contains(dt)) {

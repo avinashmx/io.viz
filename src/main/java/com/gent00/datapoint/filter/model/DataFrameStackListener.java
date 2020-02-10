@@ -8,6 +8,6 @@
 
 package com.gent00.datapoint.filter.model;
 
-public interface DataTableListener {
-    void receiveDataTable(DataTable df);
+public interface DataFrameStackListener {
+    void newDataFrameAdded(DataFrame df);
 }
