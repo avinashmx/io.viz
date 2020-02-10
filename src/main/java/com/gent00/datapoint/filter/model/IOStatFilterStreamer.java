@@ -47,7 +47,7 @@ public class IOStatFilterStreamer {
         Arrays.stream(line.split(" ")).//Split on spaces
                 filter(s -> !s.isBlank()). //Remove Blanks
                 forEach(s -> headerColumns.add(s.replace(":", ""))); //Add into array, but first rip out ":" as well.
-        return headerColumns.toArray(new String[headerColumns.size()]);
+        return headerColumns.toArray(new String[0]);
     }
 
     private void process(BufferedReader reader) throws IOException {
@@ -121,7 +121,7 @@ public class IOStatFilterStreamer {
 
 
             } else {
-                String rowValues[] = parseStringToColumns(line);
+                String[] rowValues = parseStringToColumns(line);
                 if (dt == null) {
                     dt = new DataTable();
                 }
@@ -138,7 +138,6 @@ public class IOStatFilterStreamer {
             dataFrameStack.push(df);
             df = null;//Prevent re-use
         }
-        System.out.println("Hello");
 
     }
 
