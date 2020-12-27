@@ -23,6 +23,7 @@ public class IOStatFilterStreamer {
 
     private static Pattern p = Pattern.compile("^[A-Za-z0-9-_]+:");
     private Log log = LogFactory.getLog(IOStatFilterStreamer.class);
+
     private DataFrameStackListener dataFrameStackListener;
 
     public IOStatFilterStreamer(DataFrameStackListener dataFrameStackListener) {
@@ -68,14 +69,17 @@ public class IOStatFilterStreamer {
         int lineNumber = 0;
         while ((line = reader.readLine()) != null) {
             lineNumber++;
+
             //Discard empties
             if (line.isEmpty()) {
                 continue;
             }
+
             if (log.isTraceEnabled()) {
                 log.trace(line);
             }
-            boolean isHeader = ((p.matcher(line)).find()) || line.startsWith("Device");
+
+            boolean isHeader = ((p.matcher(line)).find()) || line.startsWith("Device"); //We detect it's a header by a "semi colon" or by "Device"
             if (isHeader && log.isDebugEnabled()) {
                 log.debug("Header identified -> " + line);
             }
@@ -117,10 +121,7 @@ public class IOStatFilterStreamer {
                         df = new DataFrame();
                     }
                 }
-
-
-
-            } else {
+            } else { //Not a header, converting
                 String[] rowValues = parseStringToColumns(line);
                 if (dt == null) {
                     dt = new DataTable();
